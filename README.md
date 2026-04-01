@@ -6,6 +6,7 @@ A personal repository of reusable Claude Code skills.
 
 | Skill | Description |
 |-------|-------------|
+| `code-review` | Code reviewer with second opinion. |
 | `git-commit` | Creates conventional git commits with structured messages. |
 | `github-pr` | Opens GitHub pull requests with title, summary, and test plan. |
 | `jira-adf-writer` | Writes and fixes Jira rich-text fields using ADF. Prevents raw markdown and literal `\n` in the Jira UI. |
@@ -31,6 +32,7 @@ Restart Claude Code after installing or updating skills.
 ## Usage
 
 ```
+/code-review
 /git-commit
 /github-pr
 /jira-adf-writer
