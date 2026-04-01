@@ -15,10 +15,18 @@ A personal repository of reusable Claude Code skills.
 ```bash
 git clone <repo-url>
 cd agentic_skills
+
+# Install all skills
 ./install.sh
+
+# Install a single skill
+./install.sh -s <skill_name>
 ```
 
-Copies all skills from `.claude/skills/` into `~/.claude/skills/`. Restart Claude Code after install.
+Skills are installed to `~/.agents/skills/<skill-name>/` (full copy).
+`~/.claude/skills/<skill-name>` is a symlink pointing to the installed copy — this is how Claude Code discovers them.
+
+Restart Claude Code after installing or updating skills.
 
 ## Usage
 
@@ -30,7 +38,7 @@ Copies all skills from `.claude/skills/` into `~/.claude/skills/`. Restart Claud
 
 ## Adding a Skill
 
-1. Create `.claude/skills/<skill-name>/SKILL.md`
+1. Create `<skill-name>/SKILL.md` at the repo root
 2. Follow conventions in `CLAUDE.md`
-3. Run `./install.sh`
+3. Run `./install.sh` or `./install.sh -s <skill-name>`
 4. Commit and push
