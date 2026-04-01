@@ -1,0 +1,5 @@
+{
+    "second-opinion-tool": "gemini",
+    "second-opinion-model": "",
+    "timeout": 300000
+}
