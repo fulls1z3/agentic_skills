@@ -2,46 +2,36 @@
 
 Read `code-review/specialists/CONTRACT.md` first.
 
-Review the diff (`/tmp/code-review/diff.patch`) and surrounding request/response handling code. Focus on compatibility, caller breakage, contract drift, and documentation mismatch.
+Focus on compatibility, caller breakage, contract drift, and doc mismatch.
 
 ---
 
 ## What to review
 
-### 1. Breaking contract changes
-- removed or renamed response fields
-- changed field type/nullability
-- new required request params
-- changed status codes or method/path
-- changed auth requirements
+### Breaking changes
+- removed/renamed/retyped response fields
+- new required params / changed status/method/path/auth
 
-### 2. Hidden compatibility drift
+### Compatibility drift
 - serializer changes not reflected in docs/spec/tests
-- frontend/backend mismatch on field shape
-- optional field becoming effectively required
-- enum/status exposed through API but not fully handled
+- frontend/backend mismatch / optional becoming required
+- exposed enum/status not fully handled
 
-### 3. Error response consistency
-- new endpoint using different error envelope
-- validation errors with wrong status
-- internal errors leaked directly
+### Error consistency
+- different error envelope / wrong status / internal leaks
 
-### 4. Versioning and rollout
-- breaking changes with no versioning/compatibility story
-- old clients plausibly broken
-- webhook/event payload changes without compatibility thought
+### Versioning
+- breaking changes without versioning / old clients plausibly broken
+- webhook/event payload changes without compatibility
 
-### 5. Documentation drift
-- spec/docs/examples now stale
-- docs missing newly required behavior
+### Doc drift
+- spec/docs/examples stale or missing new behavior
 
-### 6. Consumer completeness
-Read outside the diff when needed: frontend callers, SDK/client usage, tests asserting old contract, serializers, allowlists for new enum/status values.
+### Consumer completeness
+Read outside diff: frontend callers, SDK usage, tests, serializers, allowlists for new values.
 
 ---
 
-## Fix guidance bias
+## Fix bias
 
-Prefer: preserve old field/path if cheap, add compatibility alias,
-keep field optional where possible, align serializer + parser + docs/tests,
-add explicit version boundary if truly breaking.
+Preserve old field/path, compatibility alias, keep optional, align serializer+parser+docs.

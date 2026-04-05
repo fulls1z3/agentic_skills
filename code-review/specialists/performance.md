@@ -2,52 +2,41 @@
 
 Read `code-review/specialists/CONTRACT.md` first.
 
-Review the diff (`/tmp/code-review/diff.patch`) and nearby code. Focus on material performance regressions introduced or exposed by the branch. Ignore decorative micro-optimizations.
+Focus on material performance regressions. Ignore micro-optimizations.
 
 ---
 
 ## What to review
 
-### 1. N+1 and repeated I/O
-- ORM associations loaded inside loops
-- queries inside iteration
-- repeated storage/cache/API lookups in loops
-- nested serializers/resolvers triggering per-item loads
+### N+1 and repeated I/O
+- ORM/queries/cache/API lookups inside loops
+- nested serializers triggering per-item loads
 
-### 2. Algorithmic complexity
-- nested loops over related collections
-- repeated linear scans where map/set would do
-- expensive recomputation inside render/request loops
+### Algorithmic complexity
+- nested loops / repeated linear scans where map/set would do
+- expensive recomputation inside hot loops
 
-### 3. Missing indexes / query shape drift
-- new WHERE/ORDER/JOIN usage on likely unindexed fields
-- broad scans introduced by convenience code
-- unbounded queries on growing tables
+### Missing indexes / query shape
+- WHERE/ORDER/JOIN on likely unindexed fields
+- unbounded queries / broad scans on growing tables
 
-### 4. Unbounded work
-- endpoints returning unbounded lists
-- jobs processing unlimited batches in one pass
-- retries or loops with no cap
+### Unbounded work
+- unbounded lists / unlimited batches / uncapped retries
 
-### 5. Frontend performance
-- unstable references causing rerenders
-- heavy client deps/imports for small use
-- missing lazy loading where obvious
+### Frontend
+- unstable refs causing rerenders / heavy deps for small use
+- missing lazy loading
 
-### 6. Async blocking
-- sync I/O in async handlers
-- blocking sleep in async context
+### Async blocking
+- sync I/O or blocking sleep in async context
 - CPU-heavy work in request path
 
-### 7. Retry/load amplification
-- retry loops without backoff/jitter
-- duplicate work on retry
-- retry across multiple layers multiplying load
+### Retry / load amplification
+- retry without backoff/jitter / duplicate work on retry
+- multi-layer retry multiplying load
 
 ---
 
-## Fix guidance bias
+## Fix bias
 
-Prefer: eager loading, batching, local map/set/index, pagination/limits,
-parallelize independent calls, move heavy work out of hot path,
-targeted memoization/lazy loading, index recommendation when clearly warranted.
+Eager loading, batching, map/set, pagination, move heavy work off hot path, targeted memoization.
