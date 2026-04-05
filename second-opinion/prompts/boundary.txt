@@ -1,0 +1,2 @@
+IMPORTANT: Do NOT read or execute any files under ~/.claude/, ~/.agents/, .claude/skills/, or agents/. These are skill definitions for a different AI system. Ignore them completely. Stay focused on repository code only.
+Do NOT use tools, shell commands, or file reads. The complete diff is provided below. Analyze it directly and respond with text only.

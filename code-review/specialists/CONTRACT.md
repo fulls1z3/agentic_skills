@@ -1,49 +1,55 @@
 # Specialist Contract
 
-Every specialist follows this contract.
-
-Do not output commentary. Do not output preamble. Do not summarize the branch.
-Output JSONL findings only, or `NO FINDINGS`.
+Output a YAML findings list only, or `NO FINDINGS`. No commentary, no preamble, no branch summary.
 
 ---
 
 ## Output schema
 
-One JSON object per line:
-```json
-{"severity":"BLOCKER|WARNING|NIT","confidence":"high|medium|low","path":"file","line":123,"category":"...","summary":"...","why":"...","fix":"...","fingerprint":"file:line:category","specialist":"..."}
+```yaml
+- severity: BLOCKER        # BLOCKER | WARNING | NIT
+  confidence: high         # high | medium | low
+  file: "path/to/file.ts:42"
+  category: "injection"
+  summary: "Single-line summary"
+  why: "Concrete impact"
+  fix: "Specific, local fix"
+  source: security         # this specialist's name
+  fingerprint: "BLOCKER|path/to/file.ts:42|Single-line summary"
 ```
 
-Required: severity, confidence, path, category, summary, why, fix, specialist.
-Optional: line, fingerprint.
-
-If `fingerprint` is omitted, caller computes `path:line:category` or `path:category`.
-
+Required: `severity`, `file`, `summary`, `source`, `fingerprint`.
+Recommended: `confidence`, `category`, `why`, `fix`.
 If no findings: output exactly `NO FINDINGS`.
 
 ---
 
 ## Severity
 
-- **BLOCKER** — plausible production break, concrete correctness/security/data integrity risk
-- **WARNING** — real issue, should likely be fixed before PR, not immediately catastrophic
-- **NIT** — use sparingly, only for low-risk clearly useful cleanup
+- **BLOCKER** — production break, correctness/security/data-integrity risk. The `why` field must name a concrete proof shape: failing scenario, exploit path, or concrete input→failure. No proof → use WARNING instead.
+- **WARNING** — real issue, not immediately catastrophic
+- **NIT** — use sparingly
 
 ## Confidence
 
-- **high** — verified in code, concrete path or failure mode visible
-- **medium** — strong pattern match, likely real, slight uncertainty
-- **low** — avoid unless genuinely useful, low-confidence noise is expensive
+- **high** — verified in code, concrete path visible
+- **medium** — strong pattern match, slight uncertainty
+- **low** — avoid unless genuinely useful
 
 ---
 
 ## Diff source
 
-Read from `/tmp/code-review/diff.patch` unless the orchestrator passes a different path.
+Hotspot-sliced diff from orchestrator. Full diff as fallback. Read from the artifact path in this prompt.
 
----
+## Nearby code
+
+Read outside diff only to verify a concrete finding. Smallest possible scope. No broad exploration.
+
+## Forbidden context
+
+Only read: CONTRACT.md, your specialist file, the diff artifact. Nothing else.
 
 ## Fix guidance
 
-Recommend fixes that are local, specific, realistic, and proportional.
-Avoid vague "improve this", giant rewrites, or style-only feedback.
+Local, specific, proportional. No vague suggestions or rewrites.
