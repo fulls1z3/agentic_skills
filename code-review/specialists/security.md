@@ -2,62 +2,55 @@
 
 Read `code-review/specialists/CONTRACT.md` first.
 
-Review the diff (`/tmp/code-review/diff.patch`) and directly related code. Focus on real attack surface and trust-boundary failures.
+Focus on real attack surface and trust-boundary failures.
 
 ---
 
 ## What to review
 
-### 1. Input validation at trust boundaries
-- request params/body accepted without type or shape validation
-- query params used in DB, search, file, or routing logic unsafely
+### Input validation
+- params/body without type/shape validation
+- query params in DB/search/file/routing unsafely
 - file uploads without size/type/content checks
-- webhook payloads processed without authenticity verification
-- external API payloads trusted too early
+- webhook payloads without authenticity check
+- second-order injection: input stored with safe parameterization but later interpolated into a downstream query, shell command, or template
+- validation at wrong layer: validated in controller but accessed unsanitized in service, job, or async worker
 
-### 2. Authentication and authorization
-- routes/endpoints missing auth middleware
-- work done before authz check
-- default-allow behavior
-- role escalation paths
-- user-controlled ids with no ownership check
-- expiry or revocation not enforced for tokens/sessions
+### Auth / authz
+- missing auth middleware
+- work before authz check / default-allow
+- role escalation / missing ownership check
+- token/session expiry or revocation not enforced
+- IDOR: resource ID supplied by user — is `owner_id == current_user` checked before returning or mutating?
+- JWT: `alg` field trusted from token header (alg:none bypass); `aud`/`iss` not verified
+- privilege-escalating fields (`role`, `isAdmin`, `userId`) mass-assigned from request body
 
-### 3. Injection vectors
-- shell/command injection
-- path traversal
-- SSRF from user/model supplied URLs
-- unsafe HTML rendering/XSS
-- SQL built via interpolation
-- template/header injection
+### Injection
+- shell/command injection / path traversal
+- SSRF from user/model URLs
+- XSS / unsafe HTML rendering
+- SQL interpolation / template/header injection
+- env var dict passed to subprocess includes user-controlled values; `PATH`/`LD_PRELOAD` replaceable
 
-### 4. Secrets and sensitive data
-- secrets in source/comments
-- secrets or tokens logged
-- credentials in URLs
-- sensitive internals leaked in error responses
-- hardcoded keys, IVs, tokens
+### Secrets
+- secrets/tokens in source, logs, URLs, or error responses
+- hardcoded keys/IVs/tokens
+- config committed with environment-specific values (dev endpoints, local credentials) that differ in production
 
-### 5. Crypto misuse
-- weak hashes for security-sensitive use
-- predictable randomness for secrets/tokens
-- non-constant-time compare on secrets/tokens
-- missing salt or modern password hashing
+### Crypto
+- weak hashes / predictable randomness for secrets
+- non-constant-time compare / missing salt
 
-### 6. LLM / tool security (beyond basic trust boundary)
-- stored prompt injection chains (model output → KB → future model input)
-- multi-hop tool output trust (tool A output fed to tool B without validation)
-- model/tool output used for authz or write decisions directly
-- model output shaping queries, paths, or shell commands indirectly
+### LLM / tool security
+- stored prompt injection chains
+- multi-hop tool output trust without validation
+- model output used for authz/write decisions or shaping queries/paths/shell
 
-### 7. Unsafe deserialization
-- untrusted object deserialization
-- unsafe YAML/pickle/marshal-style loads
+### Unsafe deserialization
+- untrusted object deserialization / unsafe YAML/pickle/marshal loads
 
 ---
 
-## Fix guidance bias
+## Fix bias
 
-Prefer: explicit schema/type validation, ownership/authz checks, constant-time compare,
-parameterized query, arg-array subprocess, allowlist/denylist checks, earlier boundary guard.
-No giant rewrites unless unavoidable.
+Schema validation, ownership checks, constant-time compare, parameterized queries, arg-array subprocess, allowlist checks.

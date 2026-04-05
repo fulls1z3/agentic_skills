@@ -2,56 +2,42 @@
 
 Read `code-review/specialists/CONTRACT.md` first.
 
-Review the diff (`/tmp/code-review/diff.patch`) and nearby code. Focus on structural mess likely to cause confusion, bugs, or bad follow-up changes. Do not nitpick style.
+Focus on structural mess likely to cause confusion, bugs, or bad follow-up. No style nitpicks.
 
 ---
 
 ## What to review
 
-### 1. Dead code and stale code
-- unused vars/imports introduced by the diff
-- functions or branches left behind after refactor
-- commented-out code blocks
-- stale TODO/FIXME comments
-- docstrings/comments now describing old behavior
+### Dead code
+- unused vars/imports/functions introduced or left by diff
+- commented-out code / stale TODO/FIXME
+- docs/comments describing old behavior
 
-### 2. Duplication
-- repeated logic blocks introduced by the diff
-- copy-paste with only tiny variation
-- repeated conditional chains that should be a local helper or lookup
+### Duplication
+- repeated logic / copy-paste introduced by diff
+- repeated conditional chains worth extracting
 
-Only flag when extraction is clearly worth it.
+### Conditional side effects
+- sibling branch forgets state update / event / cleanup
+- partial side effects across branches
 
-### 3. Conditional side effects
-- one branch updates state, sibling branch forgets
-- event/log/cleanup only on happy path
-- partial side effects across sibling branches
+### Incomplete refactor
+- new abstraction but old path half-live
+- rename/helper not propagated to all callers
 
-### 4. Incomplete refactor shape
-- new abstraction introduced but old path still half-live
-- rename not propagated where it matters
-- helper/service introduced but only some callers updated
+### Module boundary violations
+- layer violations (transport doing persistence)
+- reaching into private internals / circular dependency
 
-### 5. Module boundary violations
-- transport/presentation layer doing persistence/business work directly
-- reaching into private-by-convention internals
-- circular dependency introduced by the change
+### Magic numbers
+- raw literals encoding business logic / brittle string coupling
+- hardcoded values that should be config (not harmless small constants)
 
-### 6. Magic numbers and string coupling
-- raw literals that clearly encode business logic
-- brittle cross-file string coupling
-- hardcoded values that should be config or named constant
-
-Do not flag harmless small constants.
-
-### 7. Documentation drift caused by this branch
-- developer docs now misleading
-- examples/config snippets now stale
+### Doc drift
+- docs/examples/config now misleading or stale
 
 ---
 
-## Fix guidance bias
+## Fix bias
 
-Prefer: remove dead code, delete stale comments, align obvious callers,
-extract one small helper, replace repeated lookup with local map/helper.
-Avoid broad refactors.
+Remove dead code, align callers, extract one small helper. No broad refactors.
