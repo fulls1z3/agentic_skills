@@ -12,7 +12,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
 cd "$REPO_ROOT"
 
 _PROJECT_KEY=$(printf '%s' "$REPO_ROOT" | cksum | awk '{print $1}')
-OUTDIR="/tmp/code-review-${_PROJECT_KEY}-$$"
+OUTDIR="/tmp/change-review-${_PROJECT_KEY}-$$"
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
 

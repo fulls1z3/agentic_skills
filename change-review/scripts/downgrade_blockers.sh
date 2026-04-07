@@ -6,7 +6,7 @@ set -euo pipefail
 #   - its 'why' field is ≥ 8 words (substantive proof), OR
 #   - its 'why' + 'summary' fields contain at least one proof-shape keyword.
 # Otherwise severity is downgraded to WARNING in-place.
-# Usage: bash code-review/scripts/downgrade_blockers.sh <findings.yaml>
+# Usage: bash change-review/scripts/downgrade_blockers.sh <findings.yaml>
 # In-place normalization via temp file. Always exits 0.
 
 FILE="${1:?File argument required}"

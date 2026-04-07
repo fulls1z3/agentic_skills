@@ -1,6 +1,6 @@
 # Security Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on real attack surface and trust-boundary failures.
 

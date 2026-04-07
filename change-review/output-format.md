@@ -1,6 +1,6 @@
 # Output Format
 
-Authoritative format and conventions for all code-review reports. Applies to CLI output and GitHub PR comments.
+Authoritative format and conventions for all change-review reports. Applies to CLI output and GitHub PR comments.
 
 ---
 
@@ -15,8 +15,8 @@ Authoritative format and conventions for all code-review reports. Applies to CLI
 | 1/5 | Not ready — major concerns, incomplete, or fundamentally unsound |
 
 Cap rules:
-- Second opinion was warranted by risk but could not run (`SO_TOOL=none`): cap at 3/5.
-- Second opinion ran and confirmed a BLOCKER: annotate finding as `(multi-confirmed)`; score stays at 2/5 or lower.
+- Cross-review was warranted by risk but could not run (`SO_TOOL=none`): cap at 3/5.
+- Cross-review ran and confirmed a BLOCKER: annotate finding as `(multi-confirmed)`; score stays at 2/5 or lower.
 
 Present the score as: score, one sentence on why not higher, one sentence on what would increase confidence. If the diff is clean, omit "what would increase confidence."
 
@@ -165,7 +165,7 @@ Do not use any other phrasing for the merge stance. Do not hedge or qualify the 
 
 ## Multi-confirmed annotation
 
-When both main review and second opinion independently identify the same finding, annotate as `(multi-confirmed)` in the Summary cell of Key Findings. No separate Second Opinion section.
+When both main review and cross-review independently identify the same finding, annotate as `(multi-confirmed)` in the Summary cell of Key Findings. No separate cross-review section.
 
 ---
 

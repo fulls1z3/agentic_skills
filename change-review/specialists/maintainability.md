@@ -1,6 +1,6 @@
 # Maintainability Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on structural mess likely to cause confusion, bugs, or bad follow-up. No style nitpicks.
 

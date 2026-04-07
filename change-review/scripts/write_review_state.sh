@@ -7,7 +7,7 @@ REVIEW_MODE="${REVIEW_MODE:-full}"
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
 _BRANCH=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 _PROJECT_KEY=$(printf '%s|%s' "$REPO_ROOT" "$_BRANCH" | cksum | awk '{print $1}')
-STATE_DIR="/tmp/code-review-state-${_PROJECT_KEY}"
+STATE_DIR="/tmp/change-review-state-${_PROJECT_KEY}"
 STATE_FILE="$STATE_DIR/review_state.yaml"
 
 if [ "$REVIEW_MODE" = "no-change" ]; then

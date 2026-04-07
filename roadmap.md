@@ -155,7 +155,7 @@ The trial period is complete when:
 
 1. At least 10 full reviews have been run against real PRs in at least 2 different repos.
 2. The BLOCKER downgrade rate is measured: what percentage of original BLOCKERs are being downgraded? If >40%, the proof heuristic is too aggressive. If <5%, it may be too lenient.
-3. The second-opinion hit rate is measured: in what percentage of HIGH/MEDIUM_SHARP runs does SO produce at least one finding not already in the main review? If <10%, SO's signal-to-noise may not justify its latency cost.
+3. The cross-review hit rate is measured: in what percentage of HIGH/MEDIUM_SHARP runs does SO produce at least one finding not already in the main review? If <10%, SO's signal-to-noise may not justify its latency cost.
 4. At least one false-positive has been identified that a suppression mechanism would have prevented.
 5. The red-team has run on at least 3 HIGH-risk incremental diffs. Was it useful? Did it find anything the other specialists missed?
 

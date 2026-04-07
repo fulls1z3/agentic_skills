@@ -1,6 +1,6 @@
 # API Contract Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on compatibility, caller breakage, contract drift, and doc mismatch.
 

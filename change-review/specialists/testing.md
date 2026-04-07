@@ -1,6 +1,6 @@
 # Testing Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on testing gaps introduced or exposed by this branch. No broad coverage expansion.
 

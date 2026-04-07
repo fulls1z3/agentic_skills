@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: change-review
 description: >-
   Use ONLY when the user has a git diff, open PR, or branch divergence to review.
   Triggers on: "review my PR / diff / branch", "check this branch against main",
@@ -8,7 +8,7 @@ description: >-
   broad codebase exploration, writing tasks, planning, or anything without an explicit
   diff/PR/branch scope. Requires a git repository with branch divergence to function.
   Performs execution-grade diff review with specialist dispatch,
-  red-team adversarial specialist, and config-driven second opinion (Codex/Gemini).
+  red-team adversarial specialist, and config-driven cross-review (Codex/Gemini).
 allowed-tools:
   - Bash
   - Read
@@ -20,7 +20,7 @@ allowed-tools:
   - Agent
 ---
 
-# Code Review Skill
+# Change Review Skill
 
 ## Scope
 
@@ -45,7 +45,7 @@ Stop immediately and do not proceed if any of these are true:
 
 ## Execution model
 
-Each invocation is a fresh run. No state is carried over from a prior conversation or prior review. `gather_context.sh` creates a unique per-invocation artifact directory (`/tmp/code-review-<project-key>-<pid>/`) and prints `ARTEFACTS_DIR=<path>`. The orchestrator captures this value and passes it as an env var prefix to every downstream script. Do not assume artifacts from a previous invocation are present or valid.
+Each invocation is a fresh run. No state is carried over from a prior conversation or prior review. `gather_context.sh` creates a unique per-invocation artifact directory (`/tmp/change-review-<project-key>-<pid>/`) and prints `ARTEFACTS_DIR=<path>`. The orchestrator captures this value and passes it as an env var prefix to every downstream script. Do not assume artifacts from a previous invocation are present or valid.
 
 The final report must not include open-ended continuation hooks ("next move", "shall I…", "want me to…"). End at the last reviewed line. The user decides what happens next.
 
@@ -54,7 +54,7 @@ The final report must not include open-ended continuation hooks ("next move", "s
 All `scripts/` emit `KEY=VALUE` lines to stdout. The standard extraction pattern is:
 
 ```bash
-_OUT=$(bash code-review/scripts/<script>.sh [args])
+_OUT=$(bash change-review/scripts/<script>.sh [args])
 VAR=$(printf '%s\n' "$_OUT" | grep '^VAR=' | cut -d= -f2-)
 ```
 
@@ -69,7 +69,7 @@ VAR=$(printf '%s\n' "$_OUT" | grep '^VAR=' | cut -d= -f2-)
 - **Models:** all specialists → `model: "haiku"`. Exceptions: security → sonnet on HIGH + auth/trust/shell signal; red-team → sonnet on HIGH.
 - **Cheap lane:** very-tiny/low → main only. Non-sharp cap=1, testing default, override by stronger signal.
 - **Pre-filter (9.2):** launch from `run_specialists[]` on ≥1 BLOCKER/WARNING in domain; else skip unless HIGH (delta≥40) or MEDIUM_SHARP (diff≥80).
-- **Second opinion (12):** `SO_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
+- **Cross-review (12):** `SO_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
 
 ---
 
@@ -78,7 +78,7 @@ VAR=$(printf '%s\n' "$_OUT" | grep '^VAR=' | cut -d= -f2-)
 ```bash
 # Anchor CWD to repo root once — all relative paths in later steps depend on this.
 cd "$(git rev-parse --show-toplevel)"
-_OUT=$(bash code-review/scripts/detect_base.sh)
+_OUT=$(bash change-review/scripts/detect_base.sh)
 # → BASE_BRANCH, MERGE_BASE
 ```
 
@@ -87,7 +87,7 @@ _OUT=$(bash code-review/scripts/detect_base.sh)
 ## Step 2: Load prior state
 
 ```bash
-_OUT=$(bash code-review/scripts/load_prior_state.sh)
+_OUT=$(bash change-review/scripts/load_prior_state.sh)
 # → PRIOR_STATE_EXISTS, PRIOR_HEAD_COMMIT, PRIOR_FINGERPRINTS_FILE
 ```
 
@@ -132,7 +132,7 @@ If no meaningful diff: `Nothing to review — no branch diff against $BASE_BRANC
 ## Step 4: Gather context artefacts
 
 ```bash
-_OUT=$(bash code-review/scripts/gather_context.sh "$BASE_BRANCH")
+_OUT=$(bash change-review/scripts/gather_context.sh "$BASE_BRANCH")
 # → ARTEFACTS_DIR, DIFF_TOTAL, TRANSITION_STATE
 ```
 
@@ -156,7 +156,7 @@ Skip this step if `REVIEW_MODE=full` or `REVIEW_MODE=full-fallback`.
 
 ```bash
 _OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" PRIOR_HEAD_COMMIT="$PRIOR_HEAD_COMMIT" \
-  bash code-review/scripts/gen_incremental.sh)
+  bash change-review/scripts/gen_incremental.sh)
 # → INCREMENTAL_CHANGED_COUNT, INCREMENTAL_DIFF_TOTAL, INCREMENTAL_REVIEWABLE
 ```
 
@@ -167,7 +167,7 @@ Prior fingerprints: <count> unresolved findings carried forward
 ```
 Then call the persistence script and STOP:
 ```bash
-REVIEW_MODE="no-change" bash code-review/scripts/write_review_state.sh
+REVIEW_MODE="no-change" bash change-review/scripts/write_review_state.sh
 ```
 
 If `INCREMENTAL_REVIEWABLE=true`, continue to Step 6. Step 8 uses `incremental_diff.patch`.
@@ -221,7 +221,7 @@ Output one line per item. Surface `NOT DONE` / `PARTIAL` items in Review Summary
 
 ```bash
 _OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" REVIEW_MODE="$REVIEW_MODE" \
-  bash code-review/scripts/detect_scope.sh "$BASE_BRANCH")
+  bash change-review/scripts/detect_scope.sh "$BASE_BRANCH")
 # → RISK, MEDIUM_SHARP
 ```
 
@@ -239,7 +239,7 @@ Print: `Risk Level: <RISK>`
 
 Read:
 
-* `code-review/checklist.md`
+* `change-review/checklist.md`
 
 Review diff and directly related code. Read outside diff when needed.
 
@@ -268,7 +268,7 @@ Do not report speculation as fact. Do not suppress risk because tests pass. Use 
 ### 9.1 Read contract
 
 ```bash
-cat code-review/specialists/CONTRACT.md
+cat change-review/specialists/CONTRACT.md
 ```
 
 ### 9.2 Select specialists — pre-filter gate
@@ -329,17 +329,17 @@ for _s in security testing data-migration api-contract performance maintainabili
 done
 ```
 
-**Normal mode:** Launch all via Agent tool in a single message. When `RISK=HIGH` and `run_second_opinion=true`, include a Bash call in the same message (timeout=330000 to allow 5-minute tool timeout):
+**Normal mode:** Launch all via Agent tool in a single message. When `RISK=HIGH` and `run_cross_review=true`, include a Bash call in the same message (timeout=330000 to allow 5-minute tool timeout):
 
 ```bash
-ARTEFACTS_DIR="$ARTEFACTS_DIR" DIFF_PATCH="$DIFF_SRC" bash second-opinion/scripts/run.sh
+ARTEFACTS_DIR="$ARTEFACTS_DIR" DIFF_PATCH="$DIFF_SRC" bash cross-review/scripts/run.sh
 ```
 
 Step 12 reads its artifacts; does not re-invoke.
 
 Each specialist must:
 
-1. Read `code-review/specialists/CONTRACT.md` and its own specialist file only
+1. Read `change-review/specialists/CONTRACT.md` and its own specialist file only
 2. Read its slice: `$ARTEFACTS_DIR/<name>_slice.patch`
 3. Output YAML findings list only, or `NO FINDINGS`
 
@@ -363,8 +363,8 @@ Run when `review_plan.yaml -> run_red_team = true`.
 
 Dispatch:
 
-* `code-review/specialists/red-team.md`
-* `code-review/specialists/CONTRACT.md`
+* `change-review/specialists/red-team.md`
+* `change-review/specialists/CONTRACT.md`
 
 Pass diff path `$ARTEFACTS_DIR/diff.patch`. Output YAML (per CONTRACT.md).
 
@@ -373,23 +373,23 @@ Pass diff path `$ARTEFACTS_DIR/diff.patch`. Output YAML (per CONTRACT.md).
 ## Step 11: PR comment triage (lazy-loaded)
 
 ```bash
-_OUT=$(bash code-review/scripts/pr_comment_count.sh)
+_OUT=$(bash change-review/scripts/pr_comment_count.sh)
 # → PR_NUMBER, COMMENT_COUNT
 ```
 
 * No PR → skip
 * `COMMENT_COUNT=0` → skip
-* Comments exist → read `code-review/pr-comments.md`, classify, triage
+* Comments exist → read `change-review/pr-comments.md`, classify, triage
 
 ---
 
-## Step 12: Independent second opinion
+## Step 12: Independent cross-review
 
 ### 12.1 Check routing
 
 Read `$ARTEFACTS_DIR/review_plan.yaml`. No prompts, no pauses, no user input.
 
-* `run_second_opinion = false` → skip silently, go to Step 13
+* `run_cross_review = false` → skip silently, go to Step 13
 
 ### 12.2 Invoke or read artifacts
 
@@ -402,11 +402,11 @@ DIFF_SRC=$([ "$REVIEW_MODE" = "incremental" ] \
   && echo "$ARTEFACTS_DIR/incremental_diff.patch" \
   || echo "$ARTEFACTS_DIR/diff.patch")
 
-_OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" DIFF_PATCH="$DIFF_SRC" bash second-opinion/scripts/run.sh)
+_OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" DIFF_PATCH="$DIFF_SRC" bash cross-review/scripts/run.sh)
 # → SO_TOOL, SO_MODEL, SO_STRUCTURED_STATUS
 ```
 
-`SO_TOOL=none` → emit `SECOND_OPINION_SKIPPED: tool=none`. Apply gate rules per Routing.
+`SO_TOOL=none` → emit `CROSS_REVIEW_SKIPPED: tool=none`. Apply gate rules per Routing.
 
 ### 12.3 Merge findings
 
@@ -414,12 +414,12 @@ Read `$ARTEFACTS_DIR/so_structured.yaml`.
 
 - `SO_STRUCTURED_STATUS=ran` — YAML contains findings (or `[]` with PASS signal). Merge normally.
 - `SO_STRUCTURED_STATUS=raw-only` — YAML is `[]` but raw output exists. Read `$ARTEFACTS_DIR/so_structured.txt` and extract findings manually.
-- `SO_STRUCTURED_STATUS=timed-out` — tool exceeded 5-minute timeout. YAML is `[]`, raw output may be partial. Note timeout in report. Do not claim second opinion findings.
-- `SO_STRUCTURED_STATUS=failed` — tool crashed or capture failed. Continue without second opinion findings.
+- `SO_STRUCTURED_STATUS=timed-out` — tool exceeded 5-minute timeout. YAML is `[]`, raw output may be partial. Note timeout in report. Do not claim cross-review findings.
+- `SO_STRUCTURED_STATUS=failed` — tool crashed or capture failed. Continue without cross-review findings.
 
 Before merging, enforce proof-shape rule on SO findings:
 ```bash
-bash code-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/so_structured.yaml"
+bash change-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/so_structured.yaml"
 ```
 
 Dedupe by fingerprint, mark multi-confirmed. If an external BLOCKER lacks a concrete proof shape in its `why`/`summary` (no failing scenario, exploit path, or concrete input→failure), downgrade to WARNING before adding to the finding set.
@@ -430,7 +430,7 @@ Dedupe by fingerprint, mark multi-confirmed. If an external BLOCKER lacks a conc
 
 Read:
 
-* `code-review/fix-policy.md`
+* `change-review/fix-policy.md`
 
 ### 13.1 Collect and deduplicate
 
@@ -440,13 +440,13 @@ Merge all findings from:
 * specialists
 * red-team
 * PR comments
-* second opinion (prefer normalized YAML from `$ARTEFACTS_DIR/so_structured.yaml`; fall back to raw `.txt` if absent or empty)
+* cross-review (prefer normalized YAML from `$ARTEFACTS_DIR/so_structured.yaml`; fall back to raw `.txt` if absent or empty)
 
 Deduplicate by fingerprint. Findings seen by multiple sources: annotate as multi-confirmed.
 
 **Confidence normalization (required):** For every finding in the merged set, if `confidence` is absent or not one of `high | medium | low`, assign `confidence: medium`. Apply before Step 14. Multi-confirmed findings then follow Step 9.4 upgrade rules.
 
-**BLOCKER proof enforcement (required):** For every BLOCKER in the merged set (from any source — main-review, specialists, red-team, second opinion), verify the `why` or `summary` names a concrete proof shape: failing scenario, exploit path, or concrete input→failure. If absent and `why` is fewer than 8 words, downgrade to WARNING. Apply before Step 14.
+**BLOCKER proof enforcement (required):** For every BLOCKER in the merged set (from any source — main-review, specialists, red-team, cross-review), verify the `why` or `summary` names a concrete proof shape: failing scenario, exploit path, or concrete input→failure. If absent and `why` is fewer than 8 words, downgrade to WARNING. Apply before Step 14.
 
 ### 13.2 Classify for reporting
 
@@ -471,7 +471,7 @@ _OUT=$(
   REVIEW_MODE="$REVIEW_MODE" \
   INCREMENTAL_CHANGED_FILES="$_CHANGED_FILES" \
   DIFF_LINE_COUNT="$_DIFF_LINE_COUNT" \
-  bash code-review/scripts/classify_findings.sh
+  bash change-review/scripts/classify_findings.sh
 )
 # → CLASSIFY_NEW, CLASSIFY_FIXED, CLASSIFY_STILL_UNRESOLVED, CLASSIFY_STALE
 ```
@@ -480,7 +480,7 @@ _OUT=$(
 
 ## Step 14: Final report
 
-Read `code-review/output-format.md`. It is the single source of truth for report structure, section rules, scoring model, and severity language.
+Read `change-review/output-format.md`. It is the single source of truth for report structure, section rules, scoring model, and severity language.
 
 ### 14.1 Write report
 
@@ -489,7 +489,7 @@ Follow the template and section rules in `output-format.md`. Required sections:
 * **Review Summary** — 2–4 paragraphs: what the change does, what works, what is risky; end with explicit merge stance ("Safe to merge" / "Merge with caveats" / "Not safe to merge yet")
 * **Key Changes** — 3–6 bullets of high-signal implementation context; omit if diff is trivial
 * **Issues Found** — 0–4 bullets naming the most critical findings before the table; write "No actionable findings in this diff." when clean
-* **Confidence Score: X/5** — per scoring model in `output-format.md`; why not higher; what would increase confidence; add "Corroborated by second opinion." if SO ran and confirmed a finding
+* **Confidence Score: X/5** — per scoring model in `output-format.md`; why not higher; what would increase confidence; add "Corroborated by cross-review." if SO ran and confirmed a finding
 * **Key Findings** — markdown table (Type, Confidence, File, Summary, Recommendation, Status); Status is `unresolved` or `deferred`; Confidence column shows `high`/`medium` per finding (never embed confidence in Summary cell); annotate SO-confirmed findings as `(multi-confirmed)` in Summary cell; treat absent or unrecognized `confidence` as `medium`; suppress `low`-confidence findings from this table entirely
 * **Important Files Changed** — omit if fewer than 3 files; each row: file + one-line editorial answering "what changed and why it matters"
 * **Last reviewed** — sha and ISO timestamp
@@ -502,14 +502,14 @@ Write the full report to `$ARTEFACTS_DIR/report.md`. Same content as stdout.
 
 ### 14.3 Write inline comments artifact
 
-Per `pr-comments.md` Inline Comment Policy. Append each to `$ARTEFACTS_DIR/inline_comments.txt` as pipe-delimited: `path/to/file|42|**[BLOCKER]** summary — fix`.
+Per `change-review/pr-comments.md` Inline Comment Policy. Append each to `$ARTEFACTS_DIR/inline_comments.txt` as pipe-delimited: `path/to/file|42|**[BLOCKER]** summary — fix`.
 
 ---
 
 ## Step 15: Post PR review
 
 ```bash
-_OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" bash code-review/scripts/post_pr_review.sh)
+_OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" bash change-review/scripts/post_pr_review.sh)
 # → PR_COMMENT_POSTED, PR_INLINE_COUNT
 ```
 
@@ -535,15 +535,15 @@ Write **all deduplicated findings from Step 13.1** (main-review, specialists, re
 
 Then normalize any missing confidence fields and enforce proof-shape rule:
 ```bash
-bash code-review/scripts/normalize_confidence.sh "$ARTEFACTS_DIR/findings.yaml"
-bash code-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/findings.yaml"
+bash change-review/scripts/normalize_confidence.sh "$ARTEFACTS_DIR/findings.yaml"
+bash change-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/findings.yaml"
 ```
 
 ### 16.2 Invoke write_review_state.sh
 
 **no-change mode** (called from Step 5 early exit — no ARTEFACTS_DIR needed):
 ```bash
-REVIEW_MODE="no-change" bash code-review/scripts/write_review_state.sh
+REVIEW_MODE="no-change" bash change-review/scripts/write_review_state.sh
 ```
 
 **Normal mode** (full / incremental / full-fallback):
@@ -553,7 +553,7 @@ SPECIALISTS_RUN="<comma-separated names or empty>" \
 BASE_BRANCH="$BASE_BRANCH" \
 STARTED_AT="<ISO timestamp>" \
 REVIEW_MODE="$REVIEW_MODE" \
-bash code-review/scripts/write_review_state.sh
+bash change-review/scripts/write_review_state.sh
 ```
 
 The script prints `REVIEW_STATE_WRITTEN: <path>` or `REVIEW_STATE_WARNING: ...`. Always exits 0 — a failed write never blocks the review.
@@ -568,4 +568,4 @@ Suppress: harmless redundancy, "add a comment" noise, tighter-assertion nitpicks
 
 ## Error handling
 
-Any specialist/red-team/second-opinion/PR-comment failure → continue with remaining sources, record the failure, reduce confidence if warranted. No diff → stop.
+Any specialist / red-team / cross-review / PR-comment failure → continue with remaining sources, record the failure, reduce confidence if warranted. No diff → stop.

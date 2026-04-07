@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Parses raw second-opinion text → normalized YAML findings. Always exits 0.
+# Parses raw cross-review text → normalized YAML findings. Always exits 0.
 # Usage: parse.sh <input_txt> <output_yaml> <source_label>
 
 INPUT="${1:?Input file required}"
@@ -9,7 +9,7 @@ OUTPUT="${2:?Output YAML file required}"
 SOURCE="${3:?Source label required}"
 
 if [ ! -f "$INPUT" ]; then
-  echo "SECOND_OPINION_PARSE_WARNING: input file '$INPUT' not found — zero findings written" >&2
+  echo "CROSS_REVIEW_PARSE_WARNING: input file '$INPUT' not found — zero findings written" >&2
   printf '[]\n' > "$OUTPUT"
   exit 0
 fi
@@ -30,7 +30,7 @@ LC_ALL=C awk -v src="$SOURCE" '
 /^@@ / { next }
 
 # Skip sentinel lines emitted by the skill scripts themselves
-/^SECOND_OPINION_/ { next }
+/^CROSS_REVIEW_/ { next }
 
 {
   line = $0
@@ -119,9 +119,9 @@ _COUNT=0
 [ -s "$OUTPUT" ] && _COUNT=$(grep -c '^- severity:' "$OUTPUT" 2>/dev/null) || _COUNT=0
 
 if [ "$_COUNT" -eq 0 ] && [ "$_PASS_SIGNAL" -eq 0 ]; then
-  echo "SECOND_OPINION_PARSE_WARNING: no structured findings extracted from '$INPUT'" >&2
+  echo "CROSS_REVIEW_PARSE_WARNING: no structured findings extracted from '$INPUT'" >&2
 elif [ "$_COUNT" -eq 0 ] && [ "$_PASS_SIGNAL" -eq 1 ]; then
-  echo "SECOND_OPINION_PARSE_WARNING: PASS signal detected — zero findings (expected)" >&2
+  echo "CROSS_REVIEW_PARSE_WARNING: PASS signal detected — zero findings (expected)" >&2
 fi
 
 exit 0

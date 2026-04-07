@@ -181,9 +181,9 @@ else
   elif [ "$MEDIUM_SHARP" = "1" ] && [ "$_RED_TEAM_SIGNAL" = "1" ]; then RUN_RED_TEAM=1; fi
 fi
 
-RUN_SECOND_OPINION=0
+RUN_CROSS_REVIEW=0
 if [ "$RISK" = "HIGH" ] || [ "$MEDIUM_SHARP" = "1" ]; then
-  RUN_SECOND_OPINION=1
+  RUN_CROSS_REVIEW=1
 fi
 
 {
@@ -197,7 +197,7 @@ fi
     printf 'run_specialists: []\n'
   fi
   printf 'run_red_team: %s\n'       "$([ "$RUN_RED_TEAM" = "1" ] && echo true || echo false)"
-  printf 'run_second_opinion: %s\n' "$([ "$RUN_SECOND_OPINION" = "1" ] && echo true || echo false)"
+  printf 'run_cross_review: %s\n' "$([ "$RUN_CROSS_REVIEW" = "1" ] && echo true || echo false)"
 } > "$OUTDIR/review_plan.yaml"
 
 echo "RISK=$RISK"
