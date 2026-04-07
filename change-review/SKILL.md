@@ -8,7 +8,7 @@ description: >-
   broad codebase exploration, writing tasks, planning, or anything without an explicit
   diff/PR/branch scope. Requires a git repository with branch divergence to function.
   Performs execution-grade diff review with specialist dispatch,
-  red-team adversarial specialist, and config-driven cross-review (Codex/Gemini).
+  red-team adversarial specialist, and cross-review (Codex/Gemini).
 allowed-tools:
   - Bash
   - Read
@@ -69,7 +69,7 @@ VAR=$(printf '%s\n' "$_OUT" | grep '^VAR=' | cut -d= -f2-)
 - **Models:** all specialists → `model: "haiku"`. Exceptions: security → sonnet on HIGH + auth/trust/shell signal; red-team → sonnet on HIGH.
 - **Cheap lane:** very-tiny/low → main only. Non-sharp cap=1, testing default, override by stronger signal.
 - **Pre-filter (9.2):** launch from `run_specialists[]` on ≥1 BLOCKER/WARNING in domain; else skip unless HIGH (delta≥40) or MEDIUM_SHARP (diff≥80).
-- **Cross-review (12):** `SO_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
+- **Cross-review (12):** `CROSS_REVIEW_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
 
 ---
 
@@ -403,23 +403,23 @@ DIFF_SRC=$([ "$REVIEW_MODE" = "incremental" ] \
   || echo "$ARTEFACTS_DIR/diff.patch")
 
 _OUT=$(ARTEFACTS_DIR="$ARTEFACTS_DIR" DIFF_PATCH="$DIFF_SRC" bash cross-review/scripts/run.sh)
-# → SO_TOOL, SO_MODEL, SO_STRUCTURED_STATUS
+# → CROSS_REVIEW_TOOL, CROSS_REVIEW_MODEL, CROSS_REVIEW_STATUS
 ```
 
-`SO_TOOL=none` → emit `CROSS_REVIEW_SKIPPED: tool=none`. Apply gate rules per Routing.
+`CROSS_REVIEW_TOOL=none` → emit `CROSS_REVIEW_SKIPPED: tool=none`. Apply gate rules per Routing.
 
 ### 12.3 Merge findings
 
-Read `$ARTEFACTS_DIR/so_structured.yaml`.
+Read `$ARTEFACTS_DIR/cross_review_structured.yaml`.
 
-- `SO_STRUCTURED_STATUS=ran` — YAML contains findings (or `[]` with PASS signal). Merge normally.
-- `SO_STRUCTURED_STATUS=raw-only` — YAML is `[]` but raw output exists. Read `$ARTEFACTS_DIR/so_structured.txt` and extract findings manually.
-- `SO_STRUCTURED_STATUS=timed-out` — tool exceeded 5-minute timeout. YAML is `[]`, raw output may be partial. Note timeout in report. Do not claim cross-review findings.
-- `SO_STRUCTURED_STATUS=failed` — tool crashed or capture failed. Continue without cross-review findings.
+- `CROSS_REVIEW_STATUS=ran` — YAML contains findings (or `[]` with PASS signal). Merge normally.
+- `CROSS_REVIEW_STATUS=raw-only` — YAML is `[]` but raw output exists. Read `$ARTEFACTS_DIR/cross_review_structured.txt` and extract findings manually.
+- `CROSS_REVIEW_STATUS=timed-out` — tool exceeded 5-minute timeout. YAML is `[]`, raw output may be partial. Note timeout in report. Do not claim cross-review findings.
+- `CROSS_REVIEW_STATUS=failed` — tool crashed or capture failed. Continue without cross-review findings.
 
-Before merging, enforce proof-shape rule on SO findings:
+Before merging, enforce proof-shape rule on cross-review findings:
 ```bash
-bash change-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/so_structured.yaml"
+bash change-review/scripts/downgrade_blockers.sh "$ARTEFACTS_DIR/cross_review_structured.yaml"
 ```
 
 Dedupe by fingerprint, mark multi-confirmed. If an external BLOCKER lacks a concrete proof shape in its `why`/`summary` (no failing scenario, exploit path, or concrete input→failure), downgrade to WARNING before adding to the finding set.
@@ -440,7 +440,7 @@ Merge all findings from:
 * specialists
 * red-team
 * PR comments
-* cross-review (prefer normalized YAML from `$ARTEFACTS_DIR/so_structured.yaml`; fall back to raw `.txt` if absent or empty)
+* cross-review (prefer normalized YAML from `$ARTEFACTS_DIR/cross_review_structured.yaml`; fall back to raw `.txt` if absent or empty)
 
 Deduplicate by fingerprint. Findings seen by multiple sources: annotate as multi-confirmed.
 
@@ -489,8 +489,8 @@ Follow the template and section rules in `output-format.md`. Required sections:
 * **Review Summary** — 2–4 paragraphs: what the change does, what works, what is risky; end with explicit merge stance ("Safe to merge" / "Merge with caveats" / "Not safe to merge yet")
 * **Key Changes** — 3–6 bullets of high-signal implementation context; omit if diff is trivial
 * **Issues Found** — 0–4 bullets naming the most critical findings before the table; write "No actionable findings in this diff." when clean
-* **Confidence Score: X/5** — per scoring model in `output-format.md`; why not higher; what would increase confidence; add "Corroborated by cross-review." if SO ran and confirmed a finding
-* **Key Findings** — markdown table (Type, Confidence, File, Summary, Recommendation, Status); Status is `unresolved` or `deferred`; Confidence column shows `high`/`medium` per finding (never embed confidence in Summary cell); annotate SO-confirmed findings as `(multi-confirmed)` in Summary cell; treat absent or unrecognized `confidence` as `medium`; suppress `low`-confidence findings from this table entirely
+* **Confidence Score: X/5** — per scoring model in `output-format.md`; why not higher; what would increase confidence; add "Corroborated by cross-review." if cross-review ran and confirmed a finding
+* **Key Findings** — markdown table (Type, Confidence, File, Summary, Recommendation, Status); Status is `unresolved` or `deferred`; Confidence column shows `high`/`medium` per finding (never embed confidence in Summary cell); annotate cross-review-confirmed findings as `(multi-confirmed)` in Summary cell; treat absent or unrecognized `confidence` as `medium`; suppress `low`-confidence findings from this table entirely
 * **Important Files Changed** — omit if fewer than 3 files; each row: file + one-line editorial answering "what changed and why it matters"
 * **Last reviewed** — sha and ISO timestamp
 
@@ -523,7 +523,7 @@ After the final report is complete, write `findings.yaml` to `$ARTEFACTS_DIR`, t
 
 ### 16.1 Write findings.yaml
 
-Write **all deduplicated findings from Step 13.1** (main-review, specialists, red-team, SO, PR comments) to `$ARTEFACTS_DIR/findings.yaml` as a YAML list:
+Write **all deduplicated findings from Step 13.1** (main-review, specialists, red-team, cross-review, PR comments) to `$ARTEFACTS_DIR/findings.yaml` as a YAML list:
 ```yaml
 - severity: BLOCKER
   confidence: high

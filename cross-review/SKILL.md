@@ -1,10 +1,10 @@
 ---
 name: cross-review
 description: >-
-  Runs a config-driven cross-review (Codex or Gemini) on a prepared diff
-  artifact: resolves config, invokes the external tool, parses raw output to
-  normalized YAML findings, and emits status signals. Invoked by change-review;
-  standalone use requires ARTEFACTS_DIR already populated with diff.patch.
+  Runs cross-review (Codex or Gemini) on a prepared diff artifact: invokes
+  the tool, parses raw output to normalized YAML findings, and emits status
+  signals. Invoked by change-review; standalone use requires ARTEFACTS_DIR
+  already populated with diff.patch.
 allowed-tools:
   - Bash
 ---
@@ -15,10 +15,9 @@ allowed-tools:
 
 This skill owns the complete cross-review pipeline:
 
-1. **Config resolution** — env var → repo-local → global → defaults
-2. **Tool invocation** — Codex or Gemini, structured pass
-3. **Parsing** — raw tool output normalized to YAML findings
-4. **Artifact output** — `so_structured.yaml` (and raw `.txt` trail)
+1. **Tool invocation** — Codex or Gemini, structured pass
+2. **Parsing** — raw tool output normalized to YAML findings
+3. **Artifact output** — `cross_review_structured.yaml` (and raw `.txt` trail)
 
 When invoked by `change-review`, routing decisions are made by the caller. This skill only executes the cross-review work it is asked to do.
 
@@ -26,55 +25,58 @@ When invoked by `change-review`, routing decisions are made by the caller. This 
 
 ```bash
 ARTEFACTS_DIR="$ARTEFACTS_DIR" bash cross-review/scripts/run.sh
-# → SO_TOOL, SO_MODEL, SO_STRUCTURED_STATUS
+# → CROSS_REVIEW_TOOL, CROSS_REVIEW_MODEL, CROSS_REVIEW_STATUS
 ```
 
 Required env: `ARTEFACTS_DIR` (must contain `diff.patch`).
 
 **Bash timeout:** set to at least 330000ms (5.5 minutes) to accommodate the 5-minute tool timeout.
 
-Stdout signals: `SO_TOOL` (`none`/`codex`/`gemini`), `SO_MODEL`, `SO_STRUCTURED_STATUS`.
+Stdout signals: `CROSS_REVIEW_TOOL` (`none`/`codex`/`gemini`), `CROSS_REVIEW_MODEL`, `CROSS_REVIEW_STATUS`.
 
-Artifacts written to `$ARTEFACTS_DIR`: `so_config.sh`, `so_structured.txt` (raw), `so_structured.yaml` (normalized YAML findings), `so_status.txt` (status signal).
+Artifacts written to `$ARTEFACTS_DIR`: `cross_review_structured.txt` (raw), `cross_review_structured.yaml` (normalized YAML findings), `cross_review_status.txt` (status signal).
 
-## Config resolution
+## Configuration
 
-`CROSS_REVIEW_CONFIG` env → repo-local (`.claude/` / `.agents/`) → global (`~/.claude/` / `~/.agents/`) → built-in defaults. See `cross-review/scripts/resolve.sh` for authoritative resolution order.
+Env-only. No config files.
 
-Config fields: `tool` (`none` / `codex` / `gemini`, default `none`), `model` (optional, passed as flag when set).
+| Env var | Values | Default |
+|---------|--------|---------|
+| `CROSS_REVIEW_TOOL` | `none` / `codex` / `gemini` | `none` |
+| `CROSS_REVIEW_MODEL` | model name string (optional) | tool default |
+| `CROSS_REVIEW_TIMEOUT` | seconds | `300` |
 
 ## Timeout policy
 
-Both Codex and Gemini get 5 minutes (`SO_TIMEOUT=300`, overridable via env). Enforced in `run.sh` via GNU `timeout`/`gtimeout` or portable background+guard fallback. If the tool exceeds the timeout:
+Both Codex and Gemini get 5 minutes (`CROSS_REVIEW_TIMEOUT=300`, overridable via env). Enforced in `run.sh` via GNU `timeout`/`gtimeout` or portable background+guard fallback. If the tool exceeds the timeout:
 
-- `SO_STRUCTURED_STATUS=timed-out`
+- `CROSS_REVIEW_STATUS=timed-out`
 - Partial raw output preserved if available
-- `so_structured.yaml` written as `[]` if structured extraction did not complete
+- `cross_review_structured.yaml` written as `[]` if structured extraction did not complete
 
 ## Status semantics
 
-`SO_STRUCTURED_STATUS` values (non-overlapping):
+`CROSS_REVIEW_STATUS` values (non-overlapping):
 
 | Status | Meaning |
 |---|---|
 | `ran` | Tool ran, parser extracted findings OR explicit PASS/no-findings signal detected |
-| `raw-only` | Tool ran, raw output exists (>0 bytes), but parser extracted no structured findings — caller should read `so_structured.txt` |
+| `raw-only` | Tool ran, raw output exists (>0 bytes), but parser extracted no structured findings — caller should read `cross_review_structured.txt` |
 | `failed` | Tool exited non-zero, OR tool exited 0 but produced 0-byte output (capture failure) |
 | `timed-out` | Tool exceeded timeout (5 minutes default) |
 | `skipped` | Tool configured as `none` or tool binary not installed |
 
 ## Error handling
 
-`run.sh` always exits 0 — failures are surfaced via `SO_STRUCTURED_STATUS` signals, not non-zero exits. This ensures the calling skill can always continue. Inner scripts (`resolve.sh`, `structured.sh`) may exit non-zero; `run.sh` absorbs those exits.
+`run.sh` always exits 0 — failures are surfaced via `CROSS_REVIEW_STATUS` signals, not non-zero exits. This ensures the calling skill can always continue. `structured.sh` may exit non-zero; `run.sh` absorbs those exits.
 
 ## Artifact binding
 
 Each run is bound to exactly one `$ARTEFACTS_DIR`. Only these are valid evidence for that run:
 
-- `so_config.sh` — resolved config
-- `so_structured.txt` — raw tool output
-- `so_structured.yaml` — parsed YAML findings
-- `so_status.txt` — status signal
+- `cross_review_structured.txt` — raw tool output
+- `cross_review_structured.yaml` — parsed YAML findings
+- `cross_review_status.txt` — status signal
 - stdout `KEY=VALUE` signals from `run.sh`
 
 Do NOT use prior task output, prior background run output, terminal traces from earlier runs, or ambiguous UI/task history as evidence for the current run.
@@ -86,10 +88,10 @@ When run outside of `change-review`, follow `change-review/output-format.md`. Se
 1. **Review Summary** — 2–4 paragraphs: what the diff does, what the cross-review found, explicit merge stance ("Safe to merge" / "Merge with caveats" / "Not safe to merge yet")
 2. **Key Changes** — 3–6 bullets of high-signal implementation context; omit if diff is trivial
 3. **Issues Found** — 0–4 bullets naming the most critical findings; write "No actionable findings." when clean
-4. **Confidence Score: X/5** — why not higher; what would increase confidence; note `tool: {SO_TOOL}` in the rationale line
+4. **Confidence Score: X/5** — why not higher; what would increase confidence; note `tool: {CROSS_REVIEW_TOOL}` in the rationale line
 5. **Key Findings** — table with columns: Type, Confidence, File, Summary, Recommendation, Status; suppress `low`-confidence rows; show `medium`/`high` in Confidence column
 6. **Important Files Changed** — omit if fewer than 3 files; one-line editorial per file
-7. **Last reviewed** — sha, ISO timestamp, `tool: {SO_TOOL}`
+7. **Last reviewed** — sha, ISO timestamp, `tool: {CROSS_REVIEW_TOOL}`
 
 The report must be synthesized exclusively from the current run's artifacts in `$ARTEFACTS_DIR`. Do not reference or incorporate findings from any other source.
 
