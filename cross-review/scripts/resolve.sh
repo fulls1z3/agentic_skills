@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Resolves second-opinion config → so_config.sh. Required: ARTEFACTS_DIR.
+# Resolves cross-review config → so_config.sh. Required: ARTEFACTS_DIR.
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
   echo "ERROR: Not inside a git repository" >&2
@@ -15,21 +15,21 @@ if [ ! -d "$OUTDIR" ]; then
 fi
 
 CONFIG_FILE=""
-_ENV_CONFIG="${SECOND_OPINION_CONFIG:-}"
+_ENV_CONFIG="${CROSS_REVIEW_CONFIG:-}"
 if [ -n "$_ENV_CONFIG" ]; then
   if [ ! -f "$_ENV_CONFIG" ]; then
     echo "ERROR: config env var set to '$_ENV_CONFIG' but file not found" >&2
     exit 1
   fi
   CONFIG_FILE="$_ENV_CONFIG"
-elif [ -f "$REPO_ROOT/.claude/second-opinion.json" ]; then
-  CONFIG_FILE="$REPO_ROOT/.claude/second-opinion.json"
-elif [ -f "$REPO_ROOT/.agents/second-opinion.json" ]; then
-  CONFIG_FILE="$REPO_ROOT/.agents/second-opinion.json"
-elif [ -f "$HOME/.claude/second-opinion.json" ]; then
-  CONFIG_FILE="$HOME/.claude/second-opinion.json"
-elif [ -f "$HOME/.agents/second-opinion.json" ]; then
-  CONFIG_FILE="$HOME/.agents/second-opinion.json"
+elif [ -f "$REPO_ROOT/.claude/cross-review.json" ]; then
+  CONFIG_FILE="$REPO_ROOT/.claude/cross-review.json"
+elif [ -f "$REPO_ROOT/.agents/cross-review.json" ]; then
+  CONFIG_FILE="$REPO_ROOT/.agents/cross-review.json"
+elif [ -f "$HOME/.claude/cross-review.json" ]; then
+  CONFIG_FILE="$HOME/.claude/cross-review.json"
+elif [ -f "$HOME/.agents/cross-review.json" ]; then
+  CONFIG_FILE="$HOME/.agents/cross-review.json"
 fi
 
 if [ -n "$CONFIG_FILE" ]; then

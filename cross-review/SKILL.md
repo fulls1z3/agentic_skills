@@ -1,31 +1,31 @@
 ---
-name: second-opinion
+name: cross-review
 description: >-
-  Runs a config-driven second opinion (Codex or Gemini) on a prepared diff
+  Runs a config-driven cross-review (Codex or Gemini) on a prepared diff
   artifact: resolves config, invokes the external tool, parses raw output to
-  normalized YAML findings, and emits status signals. Invoked by code-review;
+  normalized YAML findings, and emits status signals. Invoked by change-review;
   standalone use requires ARTEFACTS_DIR already populated with diff.patch.
 allowed-tools:
   - Bash
 ---
 
-# second-opinion
+# cross-review
 
 ## Purpose
 
-This skill owns the complete second-opinion pipeline:
+This skill owns the complete cross-review pipeline:
 
 1. **Config resolution** — env var → repo-local → global → defaults
 2. **Tool invocation** — Codex or Gemini, structured pass
 3. **Parsing** — raw tool output normalized to YAML findings
 4. **Artifact output** — `so_structured.yaml` (and raw `.txt` trail)
 
-When invoked by `code-review`, routing decisions are made by the caller. This skill only executes the second-opinion work it is asked to do.
+When invoked by `change-review`, routing decisions are made by the caller. This skill only executes the cross-review work it is asked to do.
 
 ## Entry point
 
 ```bash
-ARTEFACTS_DIR="$ARTEFACTS_DIR" bash second-opinion/scripts/run.sh
+ARTEFACTS_DIR="$ARTEFACTS_DIR" bash cross-review/scripts/run.sh
 # → SO_TOOL, SO_MODEL, SO_STRUCTURED_STATUS
 ```
 
@@ -39,7 +39,7 @@ Artifacts written to `$ARTEFACTS_DIR`: `so_config.sh`, `so_structured.txt` (raw)
 
 ## Config resolution
 
-`SECOND_OPINION_CONFIG` env → repo-local (`.claude/` / `.agents/`) → global (`~/.claude/` / `~/.agents/`) → built-in defaults. See `second-opinion/scripts/resolve.sh` for authoritative resolution order.
+`CROSS_REVIEW_CONFIG` env → repo-local (`.claude/` / `.agents/`) → global (`~/.claude/` / `~/.agents/`) → built-in defaults. See `cross-review/scripts/resolve.sh` for authoritative resolution order.
 
 Config fields: `tool` (`none` / `codex` / `gemini`, default `none`), `model` (optional, passed as flag when set).
 
@@ -81,9 +81,9 @@ Do NOT use prior task output, prior background run output, terminal traces from 
 
 ## Report format (standalone only)
 
-When run outside of `code-review`, follow `code-review/output-format.md`. Sections in order:
+When run outside of `change-review`, follow `change-review/output-format.md`. Sections in order:
 
-1. **Review Summary** — 2–4 paragraphs: what the diff does, what the second opinion found, explicit merge stance ("Safe to merge" / "Merge with caveats" / "Not safe to merge yet")
+1. **Review Summary** — 2–4 paragraphs: what the diff does, what the cross-review found, explicit merge stance ("Safe to merge" / "Merge with caveats" / "Not safe to merge yet")
 2. **Key Changes** — 3–6 bullets of high-signal implementation context; omit if diff is trivial
 3. **Issues Found** — 0–4 bullets naming the most critical findings; write "No actionable findings." when clean
 4. **Confidence Score: X/5** — why not higher; what would increase confidence; note `tool: {SO_TOOL}` in the rationale line
@@ -93,4 +93,4 @@ When run outside of `code-review`, follow `code-review/output-format.md`. Sectio
 
 The report must be synthesized exclusively from the current run's artifacts in `$ARTEFACTS_DIR`. Do not reference or incorporate findings from any other source.
 
-When invoked by `code-review`, this skill does not produce a report — it writes normalized YAML findings to `$ARTEFACTS_DIR` for `code-review` to merge and annotate.
+When invoked by `change-review`, this skill does not produce a report — it writes normalized YAML findings to `$ARTEFACTS_DIR` for `change-review` to merge and annotate.

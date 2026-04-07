@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Structured second-opinion review. Requires: ARTEFACTS_DIR with diff.patch + so_config.sh
+# Structured cross-review review. Requires: ARTEFACTS_DIR with diff.patch + so_config.sh
 # Writes: so_structured.txt (raw), so_structured.yaml (parsed), so_status.txt (status signal)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -86,7 +86,7 @@ fi
 
 # Tool failure: skip parse, write empty YAML
 if [ "$TOOL_STATUS" -ne 0 ]; then
-  printf 'SECOND_OPINION_TOOL_EXIT: %s exited with status %d\n' "$SO_TOOL" "$TOOL_STATUS" >&2
+  printf 'CROSS_REVIEW_TOOL_EXIT: %s exited with status %d\n' "$SO_TOOL" "$TOOL_STATUS" >&2
   cat "$TMPERR" >&2 || true
   printf '[]\n' > "$OUTDIR/so_structured.yaml"
   printf 'failed\n' > "$STATUS_FILE"
@@ -97,7 +97,7 @@ cat "$TMPERR" >&2 || true
 
 # Empty capture: tool exited 0 but produced no output
 if [ ! -s "$OUTFILE" ]; then
-  printf 'SECOND_OPINION_CAPTURE_EMPTY: %s exited 0 but produced no capturable output\n' "$SO_TOOL" >&2
+  printf 'CROSS_REVIEW_CAPTURE_EMPTY: %s exited 0 but produced no capturable output\n' "$SO_TOOL" >&2
   printf '[]\n' > "$OUTDIR/so_structured.yaml"
   printf 'failed\n' > "$STATUS_FILE"
   exit 0
@@ -107,7 +107,7 @@ fi
 bash "$SCRIPT_DIR/parse.sh" \
   "$OUTFILE" \
   "$OUTDIR/so_structured.yaml" \
-  "second-opinion-structured"
+  "cross-review-structured"
 
 # Determine status
 _PARSED_COUNT=0

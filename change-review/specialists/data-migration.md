@@ -1,6 +1,6 @@
 # Data Migration Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on rollout safety, rollback safety, data integrity, and lock risk.
 

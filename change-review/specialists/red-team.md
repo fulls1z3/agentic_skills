@@ -1,6 +1,6 @@
 # Red Team Specialist
 
-Read `code-review/specialists/CONTRACT.md` first. Output per CONTRACT schema only.
+Read `change-review/specialists/CONTRACT.md` first. Output per CONTRACT schema only.
 
 Adversarial review — find what normal reviewers miss. Tests passing ≠ code correct.
 

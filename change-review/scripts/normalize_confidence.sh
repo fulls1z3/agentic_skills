@@ -3,7 +3,7 @@ set -euo pipefail
 
 # normalize_confidence.sh — fills missing confidence fields in YAML findings files.
 # Adds confidence: medium after severity: for any finding block that lacks it.
-# Usage: bash code-review/scripts/normalize_confidence.sh <findings.yaml>
+# Usage: bash change-review/scripts/normalize_confidence.sh <findings.yaml>
 # In-place normalization via temp file. Always exits 0.
 
 FILE="${1:?File argument required}"

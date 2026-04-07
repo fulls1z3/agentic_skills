@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# run.sh — Entry point for second-opinion skill. Structured review only.
+# run.sh — Entry point for cross-review skill. Structured review only.
 # Required env: ARTEFACTS_DIR (must contain diff.patch)
 # Always exits 0 — failures reported via SO_*_STATUS signals.
 

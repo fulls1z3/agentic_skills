@@ -1,6 +1,6 @@
 # Performance Specialist
 
-Read `code-review/specialists/CONTRACT.md` first.
+Read `change-review/specialists/CONTRACT.md` first.
 
 Focus on material performance regressions. Ignore micro-optimizations.
 

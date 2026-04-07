@@ -10,7 +10,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
 
 _BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 _PROJECT_KEY=$(printf '%s|%s' "$REPO_ROOT" "$_BRANCH" | cksum | awk '{print $1}')
-_STATE_FILE="/tmp/code-review-state-${_PROJECT_KEY}/review_state.yaml"
+_STATE_FILE="/tmp/change-review-state-${_PROJECT_KEY}/review_state.yaml"
 
 if [ ! -f "$_STATE_FILE" ]; then
   printf 'PRIOR_STATE_EXISTS=false\n'
@@ -23,7 +23,7 @@ if ! grep -q '^head_commit:' "$_STATE_FILE" 2>/dev/null; then
   exit 0
 fi
 
-_FP_TMP=$(mktemp /tmp/code-review-prior-fp.XXXXXX)
+_FP_TMP=$(mktemp /tmp/change-review-prior-fp.XXXXXX)
 
 PRIOR_HEAD_COMMIT=$(grep -m1 '^head_commit: ' "$_STATE_FILE" 2>/dev/null \
   | sed 's/^[^:]*: "//;s/"[[:space:]]*$//' || true)
