@@ -62,7 +62,7 @@ trap 'rm -rf "$_TMPDIR"' EXIT
 
 {
   _fingerprints "$ARTEFACTS_DIR/findings.yaml"      "  " 2>/dev/null || true
-  _fingerprints "$ARTEFACTS_DIR/so_structured.yaml" "  " 2>/dev/null || true
+  _fingerprints "$ARTEFACTS_DIR/cross_review_structured.yaml" "  " 2>/dev/null || true
 } | sort -u > "$_TMPDIR/fingerprints.yaml"
 
 _do_write() {

@@ -6,7 +6,7 @@ Phase 1 is complete and in active real-world trial. The system performs executio
 
 - Full / incremental / full-fallback reviewability based on prior session state
 - Carry-forward fingerprints for tracking findings across sessions
-- Second-opinion integration (Codex / Gemini) with structured YAML parsing
+- Cross-review integration (Codex / Gemini) with structured YAML parsing
 - PR comment persistence and triage
 - Confidence field (`high | medium | low`) in finding schema with rendering suppression for `low`
 - BLOCKER proof enforcement: vague BLOCKERs downgraded by script before persistence and by LLM instruction at merge
@@ -67,11 +67,11 @@ Phase 2 work should not start until trial evidence reveals the actual pain point
 
 ### 2.4 Review Telemetry / Cost Tracking
 
-**Problem:** There is no visibility into how much each review costs in tokens, which specialists fire most, or whether second opinion runs frequently time out or produce value. Operating blind makes it hard to justify cost or tune routing.
+**Problem:** There is no visibility into how much each review costs in tokens, which specialists fire most, or whether cross-review runs frequently time out or produce value. Operating blind makes it hard to justify cost or tune routing.
 
 **Why the current system still needs it:** Real-world trials will immediately raise the question "is this worth it?" without a way to answer it objectively.
 
-**Proposed shape:** Each run appends a one-line JSON record to `~/.claude/review-telemetry.jsonl`. Fields: `project`, `sha`, `risk`, `specialists_run`, `red_team_ran`, `so_ran`, `so_status`, `so_tool`, `finding_count`, `blocker_count`, `warning_count`, `downgraded_blockers`, `suppressed_count`, `diff_lines`, `timestamp`. No LLM call — all fields derivable from existing stdout signals. A separate `rtk` or shell command can aggregate the file on demand. No dashboard, no pipeline.
+**Proposed shape:** Each run appends a one-line JSON record to `~/.claude/review-telemetry.jsonl`. Fields: `project`, `sha`, `risk`, `specialists_run`, `red_team_ran`, `cross_review_ran`, `cross_review_status`, `cross_review_tool`, `finding_count`, `blocker_count`, `warning_count`, `downgraded_blockers`, `suppressed_count`, `diff_lines`, `timestamp`. No LLM call — all fields derivable from existing stdout signals. A separate `rtk` or shell command can aggregate the file on demand. No dashboard, no pipeline.
 
 **Risks / trade-offs:** JSONL file grows unboundedly. Mitigate: rotate at 1000 records. Privacy: only project key (not file contents) is logged.
 
@@ -109,11 +109,11 @@ Phase 3 items require evidence from Phase 2 trials before they are worth buildin
 
 ### 3.4 Better Cross-Model Synthesis
 
-**Problem:** When the main review and second opinion disagree on severity (main says WARNING, SO says BLOCKER for the same fingerprint), the current system keeps the higher severity with a multi-confirmed annotation. It does not attempt to synthesize the disagreement.
+**Problem:** When the main review and cross-review disagree on severity (main says WARNING, cross-review says BLOCKER for the same fingerprint), the current system keeps the higher severity with a multi-confirmed annotation. It does not attempt to synthesize the disagreement.
 
 **Why not now:** The disagreement case is rare and the conservative choice (keep higher severity) is correct. Adding synthesis complexity without evidence that disagreement causes noise is premature.
 
-**What would unlock it:** Trial reports showing multi-confirmed severity mismatches that are routinely dismissed by reviewers. If SO is consistently inflating severity, the synthesis rule should bias toward the lower severity when the main review's evidence is stronger.
+**What would unlock it:** Trial reports showing multi-confirmed severity mismatches that are routinely dismissed by reviewers. If cross-review is consistently inflating severity, the synthesis rule should bias toward the lower severity when the main review's evidence is stronger.
 
 ---
 

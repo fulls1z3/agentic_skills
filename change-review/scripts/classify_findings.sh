@@ -22,7 +22,7 @@ _CURR_FPS="$_TMPDIR/current_fps.txt"
 {
   for _f in \
     "$ARTEFACTS_DIR/findings.yaml" \
-    "$ARTEFACTS_DIR/so_structured.yaml"; do
+    "$ARTEFACTS_DIR/cross_review_structured.yaml"; do
     [ -s "$_f" ] || continue
     awk '
       BEGIN { sev=""; file=""; sum=""; fp="" }

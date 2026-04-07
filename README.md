@@ -6,8 +6,8 @@ A personal repository of reusable Claude Code skills.
 
 | Skill | Description |
 |-------|-------------|
-| `change-review` | Execution-grade diff reviewer with specialist dispatch, red-team adversarial review, and config-driven cross-review. |
-| `cross-review` | Config-driven external review sub-skill (Codex / Gemini). Invoked by `change-review`, not directly. |
+| `change-review` | Execution-grade diff reviewer with specialist dispatch, red-team adversarial review, and cross-review. |
+| `cross-review` | External review sub-skill (Codex / Gemini). Invoked by `change-review`, not directly. |
 | `git-commit` | Creates conventional git commits with structured messages. |
 | `github-pr` | Opens GitHub pull requests with title, summary, and test plan. |
 | `jira-adf-writer` | Writes and fixes Jira rich-text fields using ADF. Prevents raw markdown and literal `\n` in the Jira UI. |
@@ -43,7 +43,7 @@ Restart Claude Code after installing or updating skills.
 
 ## change-review
 
-Execution-grade diff reviewer with specialist dispatch, red-team adversarial review, and config-driven cross-review (Codex/Gemini).
+Execution-grade diff reviewer with specialist dispatch, red-team adversarial review, and cross-review (Codex/Gemini).
 
 ### When it triggers
 
@@ -81,66 +81,58 @@ Execution-grade diff reviewer with specialist dispatch, red-team adversarial rev
 
 ## cross-review
 
-Config-driven external review sub-skill that invokes Codex or Gemini on the diff and normalizes findings to YAML. Not invoked directly -- `change-review` calls it when risk warrants it.
+External review sub-skill that invokes Codex or Gemini on the diff and normalizes findings to YAML. Not invoked directly -- `change-review` calls it when risk warrants it.
 
 ### Setup
 
-1. Copy the example config:
-   ```bash
-   cp cross-review/cross-review.example.json ~/.claude/cross-review.json
-   ```
-
-2. Edit `~/.claude/cross-review.json` -- set `"tool"` to `"codex"` or `"gemini"`, optionally set `"model"`:
-   ```json
-   {
-       "tool": "codex"
-   }
-   ```
-
-3. Install the external tool:
+1. Install the external tool:
    - **Codex:** `npm install -g @openai/codex` then `codex login`
    - **Gemini:** `npm install -g @google/gemini-cli`
 
-### Config resolution order
+2. Set the tool via environment variable:
+   ```bash
+   # Gemini
+   export CROSS_REVIEW_TOOL=gemini
+   export CROSS_REVIEW_MODEL=gemini-2.5-pro   # optional
+   export CROSS_REVIEW_TIMEOUT=300             # optional
 
-The config is resolved in this order (first match wins):
+   # Codex
+   export CROSS_REVIEW_TOOL=codex
+   export CROSS_REVIEW_MODEL=o4-mini           # optional
+   ```
 
-1. `CROSS_REVIEW_CONFIG` environment variable (path to JSON file)
-2. `<repo>/.claude/cross-review.json`
-3. `<repo>/.agents/cross-review.json`
-4. `~/.claude/cross-review.json`
-5. `~/.agents/cross-review.json`
-6. Built-in defaults (`tool: "none"`)
+3. No config files needed. Cross-review is configured entirely through environment variables.
 
-### Config fields
+### Environment variables
 
-| Field | Values | Default |
-|-------|--------|---------|
-| `tool` | `none` / `codex` / `gemini` | `none` |
-| `model` | model name string (optional) | tool default |
+| Env var | Values | Default | Description |
+|---------|--------|---------|-------------|
+| `CROSS_REVIEW_TOOL` | `none` / `codex` / `gemini` | `none` | Set to enable cross-review |
+| `CROSS_REVIEW_MODEL` | model name string | tool default | Optional model override |
+| `CROSS_REVIEW_TIMEOUT` | seconds | `300` | Tool timeout (5 minutes) |
 
-When `tool` is `none` or the binary is not installed, cross-review is skipped silently.
+Cross-review does **not** use config files. No JSON, no `.claude/` or `.agents/` lookup. Env vars only.
+
+When `CROSS_REVIEW_TOOL=none` (default) or the tool binary is not installed, cross-review is skipped silently.
 
 ### How it works
 
-1. Resolves config via `cross-review/scripts/resolve.sh`
-2. Invokes the external tool with the diff and a structured review prompt
+1. Reads env vars directly (`CROSS_REVIEW_TOOL`, `CROSS_REVIEW_MODEL`, `CROSS_REVIEW_TIMEOUT`)
+2. Invokes the selected tool (Codex or Gemini) with the diff and a structured review prompt
 3. Parses raw output into normalized YAML findings via `cross-review/scripts/parse.sh`
-4. Writes artifacts to `$ARTEFACTS_DIR`: `so_structured.yaml`, `so_structured.txt`, `so_status.txt`
-5. Reports status via stdout signals (`SO_TOOL`, `SO_MODEL`, `SO_STRUCTURED_STATUS`)
+4. Writes artifacts to `$ARTEFACTS_DIR`: `cross_review_structured.yaml`, `cross_review_structured.txt`, `cross_review_status.txt`
+5. Reports status via stdout signals (`CROSS_REVIEW_TOOL`, `CROSS_REVIEW_MODEL`, `CROSS_REVIEW_STATUS`)
 
 ### Timeout
 
-Both tools get 5 minutes (`SO_TIMEOUT=300`, overridable via env). If the tool exceeds the timeout, `SO_STRUCTURED_STATUS=timed-out` and partial output is preserved.
+Both tools get 5 minutes (`CROSS_REVIEW_TIMEOUT=300`, overridable via env). If the tool exceeds the timeout, `CROSS_REVIEW_STATUS=timed-out` and partial output is preserved.
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
 | `cross-review/SKILL.md` | Full execution contract |
-| `cross-review/cross-review.example.json` | Config template |
 | `cross-review/scripts/run.sh` | Entry point |
-| `cross-review/scripts/resolve.sh` | Config resolution |
 | `cross-review/scripts/structured.sh` | Tool invocation and capture |
 | `cross-review/scripts/parse.sh` | Raw output to YAML parser |
 | `cross-review/prompts/` | Boundary and structured review prompts |
