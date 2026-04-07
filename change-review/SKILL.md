@@ -69,7 +69,7 @@ VAR=$(printf '%s\n' "$_OUT" | grep '^VAR=' | cut -d= -f2-)
 - **Models:** all specialists → `model: "haiku"`. Exceptions: security → sonnet on HIGH + auth/trust/shell signal; red-team → sonnet on HIGH.
 - **Cheap lane:** very-tiny/low → main only. Non-sharp cap=1, testing default, override by stronger signal.
 - **Pre-filter (9.2):** launch from `run_specialists[]` on ≥1 BLOCKER/WARNING in domain; else skip unless HIGH (delta≥40) or MEDIUM_SHARP (diff≥80).
-- **Second opinion (12):** `SO_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
+- **Cross-review (12):** `SO_TOOL=none` → skip. Gate: reject `P1`/`BLOCKER` prefix; discard skill-internal refs.
 
 ---
 
