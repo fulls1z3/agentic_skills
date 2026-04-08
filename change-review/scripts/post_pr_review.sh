@@ -119,7 +119,7 @@ if [ -s "$_inline_file" ]; then
       gh api --method POST "repos/$REPO/pulls/$PR_NUMBER/comments" \
         --raw-field body="$_b" \
         --field commit_id="$HEAD_SHA" \
-        --field path="$_f" \
+        --raw-field path="$_f" \
         --field line="$_l" \
         --field side="RIGHT" \
         --silent 2>/dev/null \
