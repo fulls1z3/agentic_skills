@@ -15,6 +15,15 @@ if [ -e "$STATE_DIR" ] && { [ ! -d "$STATE_DIR" ] || [ -L "$STATE_DIR" ]; }; the
   exit 0
 fi
 
+# Guard: reject if existing STATE_DIR is owned by a different user
+if [ -d "$STATE_DIR" ]; then
+  _STATE_OWNER=$(stat -f '%u' "$STATE_DIR" 2>/dev/null || stat -c '%u' "$STATE_DIR" 2>/dev/null || echo "")
+  if [ -n "$_STATE_OWNER" ] && [ "$_STATE_OWNER" != "$(id -u)" ]; then
+    printf 'REVIEW_STATE_WARNING: state dir owned by uid %s, not current user: %s\n' "$_STATE_OWNER" "$STATE_DIR" >&2
+    exit 0
+  fi
+fi
+
 if [ "$REVIEW_MODE" = "no-change" ]; then
   if [ -f "$STATE_FILE" ]; then
     _FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
