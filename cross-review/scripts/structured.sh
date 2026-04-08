@@ -60,15 +60,18 @@ fi
 if [ "$CROSS_REVIEW_TOOL" = "gemini" ]; then
   _CMD=(gemini --yolo)
   [ -n "${CROSS_REVIEW_MODEL:-}" ] && _CMD+=(--model "$CROSS_REVIEW_MODEL")
-  # Gemini: embed diff in prompt, capture stdout to file
-  _PROMPT="$(cat "$BOUNDARY_FILE")
-
-$(cat "$PROMPT_FILE")
-
---- BEGIN DIFF ---
-$(cat "$DIFF_PATCH")
---- END DIFF ---"
-  "${_CMD[@]}" "$_PROMPT" >"$OUTFILE" 2>"$TMPERR" || TOOL_STATUS=$?
+  # Gemini: write prompt to temp file (avoids ARG_MAX on large diffs), pipe via stdin
+  _GEMINI_PROMPT=$(mktemp)
+  {
+    cat "$BOUNDARY_FILE"
+    printf '\n\n'
+    cat "$PROMPT_FILE"
+    printf '\n\n--- BEGIN DIFF ---\n'
+    cat "$DIFF_PATCH"
+    printf '\n--- END DIFF ---\n'
+  } > "$_GEMINI_PROMPT"
+  "${_CMD[@]}" < "$_GEMINI_PROMPT" >"$OUTFILE" 2>"$TMPERR" || TOOL_STATUS=$?
+  rm -f "$_GEMINI_PROMPT"
 fi
 
 # Both Codex and Gemini may write findings to stderr/display instead of stdout.

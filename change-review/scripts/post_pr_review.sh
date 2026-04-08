@@ -39,7 +39,14 @@ _BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 _PROJECT_KEY=$(printf '%s|%s' "$REPO_ROOT" "$_BRANCH" | cksum | awk '{print $1}')
 STATE_DIR="/tmp/change-review-state-${_PROJECT_KEY}"
 _PR_STATE="$STATE_DIR/pr_comment_state.yaml"
-mkdir -p "$STATE_DIR" 2>/dev/null || true
+if [ -e "$STATE_DIR" ] && { [ ! -d "$STATE_DIR" ] || [ -L "$STATE_DIR" ]; }; then
+  _emit; exit 0
+fi
+mkdir -m 0700 -p "$STATE_DIR" 2>/dev/null || true
+_DIR_OWNER=$(stat -f '%u' "$STATE_DIR" 2>/dev/null || stat -c '%u' "$STATE_DIR" 2>/dev/null || true)
+if [ -n "$_DIR_OWNER" ] && [ "$_DIR_OWNER" != "$(id -u)" ]; then
+  _emit; exit 0
+fi
 
 # Temp files
 _TMPDIR=$(mktemp -d)
@@ -110,7 +117,7 @@ if [ -s "$_inline_file" ]; then
         continue
       fi
       gh api --method POST "repos/$REPO/pulls/$PR_NUMBER/comments" \
-        --field body="$_b" \
+        --raw-field body="$_b" \
         --field commit_id="$HEAD_SHA" \
         --field path="$_f" \
         --field line="$_l" \

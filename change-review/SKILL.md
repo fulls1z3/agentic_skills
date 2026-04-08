@@ -45,7 +45,7 @@ Stop immediately and do not proceed if any of these are true:
 
 ## Execution model
 
-Each invocation is a fresh run. No state is carried over from a prior conversation or prior review. `gather_context.sh` creates a unique per-invocation artifact directory (`/tmp/change-review-<project-key>-<pid>/`) and prints `ARTEFACTS_DIR=<path>`. The orchestrator captures this value and passes it as an env var prefix to every downstream script. Do not assume artifacts from a previous invocation are present or valid.
+Each invocation creates a fresh artifact directory via `gather_context.sh` (prints `ARTEFACTS_DIR=<path>`). The orchestrator captures this value and passes it as an env var prefix to every downstream script. Do not assume artifacts from a previous invocation are present or valid. Prior review state (fingerprints, HEAD commit, mode) is loaded separately in Step 2 via `load_prior_state.sh` and used in incremental mode to carry forward findings and detect unchanged reviews.
 
 The final report must not include open-ended continuation hooks ("next move", "shall I…", "want me to…"). End at the last reviewed line. The user decides what happens next.
 
