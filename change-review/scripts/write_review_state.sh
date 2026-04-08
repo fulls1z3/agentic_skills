@@ -10,6 +10,11 @@ _PROJECT_KEY=$(printf '%s|%s' "$REPO_ROOT" "$_BRANCH" | cksum | awk '{print $1}'
 STATE_DIR="/tmp/change-review-state-${_PROJECT_KEY}"
 STATE_FILE="$STATE_DIR/review_state.yaml"
 
+if [ -e "$STATE_DIR" ] && { [ ! -d "$STATE_DIR" ] || [ -L "$STATE_DIR" ]; }; then
+  printf 'state path blocked (symlink or non-directory): %s\n' "$STATE_DIR" >&2
+  exit 0
+fi
+
 if [ "$REVIEW_MODE" = "no-change" ]; then
   if [ -f "$STATE_FILE" ]; then
     _FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -71,6 +76,12 @@ _do_write() {
     return 1
   fi
   mkdir -m 0700 -p "$STATE_DIR"
+  # Verify ownership after creation to guard against TOCTOU symlink swap
+  _DIR_OWNER=$(stat -f '%u' "$STATE_DIR" 2>/dev/null || stat -c '%u' "$STATE_DIR" 2>/dev/null || true)
+  if [ -n "$_DIR_OWNER" ] && [ "$_DIR_OWNER" != "$(id -u)" ]; then
+    printf 'state dir owned by uid %s, refusing write: %s\n' "$_DIR_OWNER" "$STATE_DIR" >&2
+    return 1
+  fi
   local out="$_TMPDIR/review_state.yaml"
   > "$out"
 

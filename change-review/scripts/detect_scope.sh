@@ -16,20 +16,18 @@ OUTDIR="${ARTEFACTS_DIR:?ARTEFACTS_DIR not set}"
 
 REVIEW_MODE="${REVIEW_MODE:-full}"
 
-CHANGED_FILES=$(cat "$OUTDIR/changed_files.txt")
 DIFF_TOTAL=$(cat "$OUTDIR/diff_total.txt")
 [[ "$DIFF_TOTAL" =~ ^[0-9]+$ ]] || { echo "ERROR: invalid DIFF_TOTAL" >&2; exit 1; }
 FILE_COUNT=$(wc -l < "$OUTDIR/changed_files.txt" | tr -d ' ')
 [[ "$FILE_COUNT" =~ ^[0-9]+$ ]] || FILE_COUNT=0
 
+_SPECIALIST_FILE="$OUTDIR/changed_files.txt"
 if [ "$REVIEW_MODE" = "incremental" ] && [ -s "$OUTDIR/incremental_changed_files.txt" ]; then
-  SPECIALIST_FILES=$(cat "$OUTDIR/incremental_changed_files.txt")
-else
-  SPECIALIST_FILES="$CHANGED_FILES"
+  _SPECIALIST_FILE="$OUTDIR/incremental_changed_files.txt"
 fi
 
-sc()     { echo "$CHANGED_FILES"    | grep -qiE "$1" && echo 1 || echo 0; }
-inc_sc() { echo "$SPECIALIST_FILES" | grep -qiE "$1" && echo 1 || echo 0; }
+sc()     { grep -qiE "$1" "$OUTDIR/changed_files.txt" 2>/dev/null && echo 1 || echo 0; }
+inc_sc() { grep -qiE "$1" "$_SPECIALIST_FILE"         2>/dev/null && echo 1 || echo 0; }
 
 SCOPE_AUTH=$(sc        '(auth|login|session|token|permission|role|oauth|jwt)')
 SCOPE_MIGRATIONS=$(sc  '(db/migrate|/migrations/|_migration\.|schema\.(rb|sql)|\.sql$|alembic|flyway|liquibase)')

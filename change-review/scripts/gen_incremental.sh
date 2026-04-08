@@ -36,7 +36,7 @@ if [ -n "$_REVIEWABLE_UNTRACKED" ]; then
   sort -u "$_FILES" -o "$_FILES" 2>/dev/null || true
   # Generate diff vs /dev/null for each untracked file
   while IFS= read -r _uf; do
-    [ -f "$_uf" ] && git diff --no-index /dev/null "$_uf" >> "$_DIFF" 2>/dev/null || true
+    [ -f "$_uf" ] && git diff --no-index -- /dev/null "$_uf" >> "$_DIFF" 2>/dev/null || true
   done <<< "$_REVIEWABLE_UNTRACKED"
 fi
 
